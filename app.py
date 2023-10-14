@@ -28,7 +28,9 @@ except:
     print("cannot connect to db")
 
 app = Flask(__name__)
-palm.configure(api_key="AIzaSyDR3fQbK7mG4Rvowdr3kyzAiWAjaobtIIY")
+
+API_KEY=os.getenv('API_KEY')
+palm.configure(api_key=API_KEY)
 
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'docx', 'pdf'}
