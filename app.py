@@ -36,7 +36,6 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'docx', 'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-import re
 
 def remove_unwanted_symbols(text):
   """Removes unwanted symbols from text.

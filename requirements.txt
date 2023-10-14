@@ -1,9 +1,7 @@
--q google-generativeai
+google-generativeai
 flask
 pypdf2
 python-docx
-exceptions
-re
-ast
 pandas
 pymongo
+python-dotenv
