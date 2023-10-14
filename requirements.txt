@@ -1,0 +1,9 @@
+-q google-generativeai
+flask
+pypdf2
+python-docx
+exceptions
+re
+ast
+pandas
+pymongo
