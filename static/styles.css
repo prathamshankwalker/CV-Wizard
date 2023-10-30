@@ -17,8 +17,19 @@ ul {
 
 li {
     margin: 20px 0;
+   
 }
 
 p {
     white-space: pre-line;
+}
+/* Set a fixed width for the table cells */
+table td {
+  width: 150px; /* Adjust the width as needed */
+}
+
+/* Allow text to wrap within table cells */
+table td {
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }

@@ -117,13 +117,21 @@
 
       th,
       td {
-        padding: 10px;
+        padding: 5px;
         text-align: left;
       }
 
       th {
         background-color: #f2f2f2;
       }
+
+      /* Set a fixed width for the table cells */
+
+      /* Allow text to wrap within table cells */
+      table td {
+        word-wrap: break-word;
+      }
+      /* Style for the error table (if needed) */
       .error-table {
         color: red;
       }
@@ -170,14 +178,14 @@
           <td>
             <ul>
               {% for education in file_data[1][4] %}
-              <li>{{ education }},</li>
+              <li><br />{{ education }}<br /></li>
               {% endfor %}
             </ul>
           </td>
           <td>
             <ul>
               {% for experience in file_data[1][5] %}
-              <li>{{ experience }},</li>
+              <li><br />{{ experience }} <br /></li>
               {% endfor %}
             </ul>
           </td>

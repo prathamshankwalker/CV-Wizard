@@ -7,6 +7,7 @@ import PyPDF2
 import docx
 import re
 import ast
+# import magic
 
 import pandas as pd
 
@@ -36,6 +37,7 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'docx', 'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+import re
 
 def remove_unwanted_symbols(text):
   """Removes unwanted symbols from text.
@@ -107,7 +109,27 @@ def extract_text_from_resume(resume_file):
     else:
         raise ValueError("Unsupported resume file format")
     
+def is_supported_format(file_path):
+    """
+    Check if a file is in a supported format (PDF or DOCX).
 
+    Args:
+        file_path (str): The path to the file to be checked.
+
+    Returns:
+        bool: True if the file is in a supported format, False otherwise.
+    """
+    # Define the supported file formats
+    supported_extensions = [".pdf", ".docx"]
+    
+    # Get the file extension from the file path
+    file_extension = os.path.splitext(file_path)[-1].lower()
+
+    # Check if the detected format is in the list of supported formats
+    if file_extension in supported_extensions:
+        return True
+    else:
+        return False
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
@@ -120,6 +142,7 @@ def upload_file():
     'Education',
     'Work Experience'])
 
+ 
     if request.method == 'POST':
         uploaded_files = request.files.getlist('file')
         extracted_text = []
@@ -131,70 +154,81 @@ def upload_file():
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-    
-            text=extract_text_from_resume(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            if is_supported_format(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
+                print("Supported file xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+                text=extract_text_from_resume(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             
-            text=remove_unwanted_symbols(text)
+                text=remove_unwanted_symbols(text)
 
-            print(text)
+                print(text)
 
-            models = [m for m in palm.list_models() if 'generateText' in m.supported_generation_methods]
-            model = models[0].name
+                models = [m for m in palm.list_models() if 'generateText' in m.supported_generation_methods]
+                model = models[0].name
 
-            prompt = f"""
-            You are an expert resume parser. For the given resume data, parse the resume and return only the List of details in the following format: [Name, phone number, email, [list of skills], [list of education], [list of experience (years-company-role)]]. The output should start and end with square brackets of the list only.
-            
-            resume data : {text} 
+                prompt = f"""
+                You are an expert resume parser. For the given resume data, parse the resume and return only the List of details in the following format: [Name, phone number, email, [list of skills], [list of education], [list of experience (years-company-role)]]. The output should start and end with square brackets of the list only.
+                
+                resume data : {text} 
 
 
-            """
-            
-            print(filename, "ongoing")
+                """
+                
+                print(filename, "ongoing")
 
-            completion = palm.generate_text(
-                model=model,
-                prompt=prompt,
-                temperature=0,
-                # The maximum length of the response
-                max_output_tokens=800,
-            )
-            # print(i, " done")
-            op_text=completion.result
-            print("I am here ------->>>>",op_text)
+                completion = palm.generate_text(
+                    model=model,
+                    prompt=prompt,
+                    temperature=0,
+                    # The maximum length of the response
+                    max_output_tokens=800,
+                )
+                # print(i, " done")
+                op_text=completion.result
+                print("I am here ------->>>>",op_text)
 
-            try:
-                converted_text=ast.literal_eval(op_text)
-                print(converted_text)
-                extracted_text.append([filename,converted_text])
-                count+=1
-            except Exception as e:
-                print(e)
+                try:
+                    converted_text=ast.literal_eval(op_text)
+                    print(converted_text)
+                    extracted_text.append([filename,converted_text])
+                    count+=1
+                except Exception as e:
+                    print(e)
+                    errored_files.append(filename)
+            else:
+                print("unsopported filexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
                 errored_files.append(filename)
+    
+
 
 
 
         # print(extracted_text)
 
         #creating a dataframe
-        for i in extracted_text:# Extract data from the nested structure
-            filename = i[0]
-            personal_info = i[1]
-            name=personal_info[0]
-            phone=personal_info[1]
-            email=personal_info[2]
-            skills = personal_info[3]
-            education = personal_info[4]
-            work_experience = personal_info[5]
-            print(f"Name : {name}, phone:{phone},edu: {education}")
+        try:
+            for i in extracted_text:# Extract data from the nested structure
+                filename = i[0]
+                personal_info = i[1]
+                name=personal_info[0]
+                phone=personal_info[1]
+                email=personal_info[2]
+                skills = personal_info[3]
+                education = personal_info[4]
+                work_experience = personal_info[5]
+                print(f"Name : {name}, phone:{phone},edu: {education}")
+        except Exception as e:
+            print(e)
+            errored_files.append(filename)
+
 
         # Create a DataFrame
         # Extract the job positions and join them with commas
-            job_positions = [', '.join(info) for info in work_experience]
+        job_positions = [', '.join(info) for info in work_experience]
 
             # 'Work Experience' will be a string containing all the job positions separated by commas
             
 
-            new_row={
+        new_row={
             'Filename': filename,
             'Name': name,
             'Phone': phone,
@@ -202,12 +236,16 @@ def upload_file():
             'Skills': ', '.join(skills),
             'Education': ', '.join(education),
             'Work Experience': ', '.join(job_positions)
-        }
+            }   
+        print("---------------------------------------------------------------------------------------------------")
+        print(new_row)
+        print("---------------------------------------------------------------------------------------------------")
+            # if df2.empty:
+                
             
-            # print(new_row)
+            # df2 = df2.append(new_row, ignore_index=True)
             
-
-            df2=pd.concat([df2, pd.DataFrame([new_row])], ignore_index=True)
+        df2=pd.concat([df2, pd.DataFrame([new_row])], ignore_index=True)
 
 
        
@@ -232,7 +270,7 @@ def upload_file():
 def export_csv():
     print("clicked export csv")
     # df = create_dataframe()  # Replace with your existing DataFrame
-    
+    print(df2)
     csv_data = df2.to_csv(index=False)
     response = make_response(csv_data)
     response.headers["Content-Disposition"] = "attachment; filename=data.csv"
